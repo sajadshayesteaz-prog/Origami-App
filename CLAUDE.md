@@ -1,18 +1,18 @@
 # CLAUDE.md — Origami App
 
 ## What this project is
-A personal (not published) cross-platform origami app, bilingual Persian/English (Persian is RTL), with three parts:
+A personal (not published) cross-platform origami app, **English UI only**, with three parts:
 1. **Basic folds guide** — diagram symbols, basic folds and classic bases.
 2. **Model library** — step-by-step folding of intermediate→advanced models, steps cut from book PDFs, with an optional synced 3D view.
 3. **Design tools** — (a) image → tree base → crease pattern; (b) 3D model → crease pattern.
 
-The owner communicates in Persian. Write code, comments and commit messages in English; write reports and STATUS in Persian.
+The owner communicates in Persian. The app UI is English only (no Persian/RTL). Write code, comments and commit messages in English; write reports and STATUS in Persian.
 
 ## Two repositories
 - **This repo (Origami-App):** all code and app data.
 - **Communication repo (Claude-Code-for-origami):** task sheets, reports, status, decisions, project docs, technical sources. Location: `COMMS_DIR` from `.env`; default `../Claude-Code-for-origami`. Run `git pull` there before starting a task.
 
-## Approach (read `$COMMS_DIR/docs/approach.md` first)
+## Approach (read `$COMMS_DIR/docs/core-design.md` first — the reference design — then `approach.md`)
 - Main goal: turn step-by-step diagrams from origami books into step-by-step 2D/3D folding shown to the user. Each step is stored as a **folding action** (our own action language) and executed and animated by **our own folding engine**.
 - **Existing code, papers and tools are hints, not components.** They are raw, partly old, and not designed to work together. Study them for algorithms, data formats and test cases; never drop them into the app unreviewed. Before choosing a tool, also look for simpler, more modern options; write a short evaluation in the report and record the choice in decisions.md.
 - External libraries are allowed only for narrow mathematical jobs (geometry, layer-order solving) after testing.
@@ -40,11 +40,12 @@ The owner communicates in Persian. Write code, comments and commit messages in E
 
 ## Data conventions
 - **FOLD (JSON) is the internal format everywhere.** One teaching step = one frame in `file_frames`.
-- Library data: `data/library/<model-id>/model.json` + `steps/NNN.png|svg`. Schemas in `data/schema/`.
+- Library data: Model Packages (`core-design.md` §3): `data/library/<model-id>/model.json` + `images/` + derived `states.fold`. Schemas in `data/schema/`.
 - Book PDFs are never committed. Location from `.env`: `ORIGAMI_LIBRARY_DIR` (owner's PC: `D:\literature\کتاب\Origami`; books in subfolder `متن ها و تصاویر`). Library books for now: *Works of Hideo Komatsu* (primary), *Origami Essence* (second). Paths contain Persian characters and spaces — always quote them and use UTF-8.
 
 ## Default stack (change only with a reason recorded in decisions.md)
-- App: Vite + React + TypeScript, PWA later; three.js for 3D (our own renderer); i18n with fa (RTL) and en.
+- App: Vite + React + TypeScript, PWA later; three.js for 3D (our own renderer). Engine as a pure TypeScript package (`packages/engine`).
+- Visual polish does not matter; diagram clarity and folding correctness do.
 - Data: FOLD for paper states; our action language (`$COMMS_DIR/docs/action-language.md`, written in task 002) for steps.
 - Candidate helpers to evaluate (not defaults): `rabbit-ear`, Flat-Folder (layer orders), `origami-diagrams` format. Origami Simulator only as an optional physics view.
 - Design engines: BP Studio core (`vendor/box-pleating-studio`, TypeScript, Web Worker); TreeMaker model (`vendor/treemaker/Source/tmModel`, C++, no GUI dependency) only if needed, e.g. via WebAssembly.
