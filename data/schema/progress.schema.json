@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://origami-app.local/schema/progress.schema.json",
+  "title": "Progress",
+  "description": "A user's progress on one model (stored in IndexedDB).",
+  "type": "object",
+  "required": ["modelId", "lastStep"],
+  "additionalProperties": false,
+  "properties": {
+    "modelId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "lastStep": { "type": "integer", "minimum": 1 },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://origami-app.local/schema/model.schema.json",
+  "title": "Model",
+  "description": "One origami model in the library: data/library/<id>/model.json.",
+  "type": "object",
+  "required": ["id", "names", "category", "difficulty", "source", "paper", "stepCount", "has3D", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Folder name under data/library/." },
+    "names": { "$ref": "#/$defs/localized" },
+    "category": {
+      "type": "string",
+      "enum": ["animal", "bird", "insect", "aquatic", "human", "creature", "plant", "object", "geometric", "base", "other"]
+    },
+    "difficulty": { "type": "integer", "minimum": 1, "maximum": 5, "description": "1 = simple … 5 = super-complex." },
+    "designer": { "type": "string" },
+    "source": {
+      "type": "object",
+      "description": "Where the diagrams come from (book + page).",
+      "required": ["book"],
+      "additionalProperties": false,
+      "properties": {
+        "book": { "type": "string" },
+        "page": { "type": "integer", "minimum": 1 },
+        "pages": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    "paper": {
+      "type": "object",
+      "required": ["shape"],
+      "additionalProperties": false,
+      "properties": {
+        "shape": { "type": "string", "enum": ["square", "rectangle", "triangle", "hexagon", "other"] },
+        "ratio": { "type": "number", "exclusiveMinimum": 0, "description": "Width / height for non-square paper." },
+        "sizeCm": { "type": "number", "exclusiveMinimum": 0, "description": "Recommended edge length in cm." },
+        "note": { "type": "string" }
+      }
+    },
+    "stepCount": { "type": "integer", "minimum": 1 },
+    "has3D": { "type": "boolean", "description": "True when fold3D points to a FOLD file with one frame per step." },
+    "fold3D": { "type": "string", "description": "Path (relative to the model folder) of the multi-frame FOLD file." },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "step.schema.json" } }
+  },
+  "if": { "properties": { "has3D": { "const": true } } },
+  "then": { "required": ["fold3D"] },
+  "$defs": {
+    "localized": {
+      "type": "object",
+      "required": ["fa", "en"],
+      "additionalProperties": false,
+      "properties": { "fa": { "type": "string" }, "en": { "type": "string" } }
+    }
+  }
+}

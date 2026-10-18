@@ -1,0 +1,17 @@
+/* Embed mode for Origami Simulator inside Origami-App: show only the 3D canvas. */
+html,
+body,
+#controlsBottom {
+  min-width: 0 !important;
+}
+#globalNav,
+#basicUI,
+#controls,
+#controlsBottom,
+#controlsLeft,
+#svgViewer,
+#helper,
+.modal,
+.modal-backdrop {
+  display: none !important;
+}
