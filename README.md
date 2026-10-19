@@ -16,13 +16,13 @@ Double-click `run-dev.bat` (puts the portable Node in `%LOCALAPPDATA%\Programs\n
 npm install
 npm run dev
 ```
-Then open http://localhost:5173. **Model player**: pick a model package and step through it (diagram | 3D). **FOLD viewer**: the task-001 viewer for raw `.fold` / `.svg` files.
+Then open http://localhost:5173 and pick a model package to step through it (book image | diagram | 3D).
 
 ## Layout
 | Path | What |
 |---|---|
 | `packages/engine/` | Folding engine (pure TypeScript, no UI): paper state, action language, interpreter, motion planner, 2D diagrams. Tests in `packages/engine/test/` |
-| `app/` | Vite + React + TypeScript player (`app/src/player/`), legacy FOLD viewer (`app/src/components/`), static files in `app/public/` |
+| `app/` | Vite + React + TypeScript player (`app/src/player/`); `app/public/samples/` (reference FOLD/SVG files, used by tests) and `app/public/origami-simulator/` (kept, not wired in) |
 | `app/public/samples/` | Sample FOLD/SVG files copied from the comms repo (`npm run sync:samples`) |
 | `app/public/origami-simulator/` | Trimmed Origami Simulator used for the 3D view (`npm run sync:simulator`, needs `vendor/`) |
 | `data/schema/` | JSON Schemas: `model-package.schema.json` (Model Package), `progress.schema.json` |

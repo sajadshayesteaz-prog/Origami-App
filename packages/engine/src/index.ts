@@ -10,4 +10,5 @@ export * from "./mat";
 export * from "./motion";
 export * from "./package";
 export * from "./refs";
+export * from "./sim";
 export * from "./state";

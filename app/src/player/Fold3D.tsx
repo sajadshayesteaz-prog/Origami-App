@@ -17,7 +17,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { applyPoint, edgeKey, edgeMap, multiply, type Motion } from "@origami/engine";
+import { applyPoint, edgeKey, edgeMap, type Motion } from "@origami/engine";
 
 const EDGE_DARK: [number, number, number] = [0.1, 0.1, 0.1];
 const EDGE_CREASE: [number, number, number] = [0.6, 0.6, 0.6];
@@ -120,10 +120,7 @@ export function Fold3D({ motion, t, colorUp, colorDown, resetKey }: Fold3DProps)
     const s = motion.state;
     const fr = motion.frame(t);
     const em = edgeMap(s.cp);
-    const faces = s.cp.faces.map((loop, f) => {
-      const m = multiply(fr.view, fr.model[f]);
-      return loop.map((v) => applyPoint(m, [s.cp.vertices[v][0], s.cp.vertices[v][1], 0]));
-    });
+    const faces = fr.faces.map((pts) => pts.map((q) => applyPoint(fr.view, q)));
     // Keep the model centred: subtract the centre of its bounding box.
     const min = new Vector3(Infinity, Infinity, Infinity);
     const max = new Vector3(-Infinity, -Infinity, -Infinity);

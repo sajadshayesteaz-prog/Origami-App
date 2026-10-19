@@ -2,10 +2,10 @@ import { bird as birdBase } from "rabbit-ear/fold/bases.js";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { facePolygon } from "../src/cp";
+import { edgeFaces, facePolygon } from "../src/cp";
 import { pointInConvex, polygonCentroid } from "../src/geom";
 import { applyPoint, type Mat4 } from "../src/mat";
-import { restFrame, type Frame } from "../src/motion";
+import { restFrame, type Frame, type Motion } from "../src/motion";
 import { runPackage, type ModelPackage } from "../src/package";
 import { overlapMatrix, type PaperState } from "../src/state";
 
@@ -14,32 +14,54 @@ const library = join(root, "data", "library");
 const load = (id: string): ModelPackage => JSON.parse(readFileSync(join(library, id, "model.json"), "utf8"));
 const ids = readdirSync(library);
 
-/** World positions (view ∘ model) of every face's CP vertices at a frame. */
-const placed = (s: PaperState, fr: Frame, f: number, pts = facePolygon(s.cp, f)) =>
-  pts.map((p) => applyPoint(fr.view as Mat4, applyPoint(fr.model[f], [p[0], p[1], 0])));
+/** A motion frame's face vertices in view space. */
+const placed = (fr: Frame, f: number) => fr.faces[f].map((q) => applyPoint(fr.view as Mat4, q));
 
-/** Max distance between two placements of the same CP points. */
+/** CP points placed by a rested state's face f (rigid transform + layer offset), in view space. */
+const placedRest = (s: PaperState, f: number, pts: number[][]) =>
+  pts.map((p) => applyPoint(s.view, applyPoint(s.faceM[f], [p[0], p[1], 0]))).map((q) => [q[0], q[1], q[2]]);
+
+/** Max distance between two placements of the same points. */
 const gap = (a: number[][], b: number[][]) => Math.max(...a.map((p, i) => Math.hypot(p[0] - b[i][0], p[1] - b[i][1], p[2] - b[i][2])));
 
 /**
- * Continuity: a motion's first frame must place every face exactly where the previous state's
- * rest frame placed the face it came from (faces may have been split), and its last frame must
- * equal the new state's rest frame.
+ * Continuity: a motion's first frame must place every face exactly where the previous state
+ * placed the face it came from (faces may have been split), and its last frame must equal the
+ * new state's rest frame. Offsets are left out so the comparison is about the paper itself.
  */
-function checkMotionEnds(prev: PaperState, motionState: PaperState, frame: (t: number) => Frame) {
-  const f0 = frame(0);
-  const f1 = frame(1);
-  const prevRest = restFrame(prev);
-  const nextRest = restFrame(motionState);
+function checkMotionEnds(prev: PaperState, m: Motion) {
+  const s = m.state;
+  const f0 = m.frame(0, false);
+  const f1 = m.frame(1, false);
+  const rest1 = restFrame(s, false);
   let worst = 0;
-  motionState.cp.faces.forEach((_, f) => {
-    const pts = facePolygon(motionState.cp, f);
+  s.cp.faces.forEach((_, f) => {
+    const pts = facePolygon(s.cp, f);
     const c = polygonCentroid(pts);
     const parent = prev.cp.faces.findIndex((__, g) => pointInConvex(facePolygon(prev.cp, g), c, 1e-9));
     expect(parent).toBeGreaterThanOrEqual(0);
-    worst = Math.max(worst, gap(placed(motionState, f0, f, pts), placed(prev, prevRest, parent, pts)));
-    worst = Math.max(worst, gap(placed(motionState, f1, f), placed(motionState, nextRest, f)));
+    worst = Math.max(worst, gap(placed(f0, f), placedRest(prev, parent, pts)));
+    worst = Math.max(worst, gap(placed(f1, f), placed(rest1, f)));
   });
+  return worst;
+}
+
+/** Largest separation, over sampled times, between the two faces' copies of any shared CP vertex. */
+function maxTear(m: Motion, samples = 24) {
+  const s = m.state;
+  const ef = edgeFaces(s.cp);
+  let worst = 0;
+  for (let i = 1; i < samples; i++) {
+    const fr = m.frame(i / samples, false);
+    ef.forEach((fs, e) => {
+      if (fs.length !== 2) return;
+      for (const v of s.cp.edges[e].v) {
+        const a = fr.faces[fs[0]][s.cp.faces[fs[0]].indexOf(v)];
+        const b = fr.faces[fs[1]][s.cp.faces[fs[1]].indexOf(v)];
+        worst = Math.max(worst, Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]));
+      }
+    });
+  }
   return worst;
 }
 
@@ -55,9 +77,15 @@ describe.each(ids)("package %s", (id) => {
     for (const s of run.steps) {
       let prev = s.before;
       for (const m of s.motions) {
-        expect(checkMotionEnds(prev, m.state, (t) => m.frame(t)), `step ${s.step.label} ${m.kind}`).toBeLessThan(1e-9);
+        expect(checkMotionEnds(prev, m), `step ${s.step.label} ${m.kind}`).toBeLessThan(1e-9);
         prev = m.state;
       }
+    }
+  });
+
+  it("the paper never comes apart during any motion", () => {
+    for (const s of run.steps) {
+      for (const m of s.motions) expect(maxTear(m), `step ${s.step.label} ${m.kind}`).toBeLessThan(1e-9);
     }
   });
 

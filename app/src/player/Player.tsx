@@ -63,6 +63,12 @@ export function Player() {
     setResetKey((k) => k + 1);
   }, [pkg]);
 
+  // Simulated motions (collapse) are computed on first use; prepare the next step's while idle.
+  useEffect(() => {
+    const id = setTimeout(() => run.steps[index + 1]?.motions.forEach((m) => m.frame(0.5)), 400);
+    return () => clearTimeout(id);
+  }, [run, index]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;

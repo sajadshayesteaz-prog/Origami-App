@@ -1,33 +1,44 @@
-import { transformsFromAngles, assignmentAngle } from "./collapse";
+import { assignmentAngle } from "./collapse";
 import type { FoldResult } from "./fold";
-import { multiply, rotationAbout, translation, type Mat4, type Vec3 } from "./mat";
+import { applyPoint, multiply, rotationAbout, translation, type Mat4, type Vec3 } from "./mat";
+import { buildMesh, relax } from "./sim";
 import type { PaperState } from "./state";
 
 /** Gap between stacked layers when rendering, in paper units (paper size = 1). */
 export const LAYER_GAP = 0.002;
 
-/** Face placements at one instant: per face CP → model (including layer offset), and model → view. */
+/**
+ * Paper at one instant: for every face, the model-space positions of its CP vertices (in the
+ * face's loop order, including the layer offset), and the model → view rotation.
+ */
 export interface Frame {
-  model: Mat4[];
+  faces: Vec3[][];
   view: Mat4;
 }
 
 /**
  * The movement of one action (core-design §7). `state` gives the faces being moved (its CP);
  * frame(0) is exactly the previous state and frame(1) exactly the new one.
+ * With `offsets = false` the layer offsets are left out (used to check the paper never tears).
  */
 export interface Motion {
   kind: string;
   state: PaperState;
-  frame(t: number): Frame;
+  frame(t: number, offsets?: boolean): Frame;
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const lift = (z: number, m: Mat4) => multiply(translation(0, 0, z), m);
+const smoothstep = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+
+/** Face vertex positions from one rigid transform per face. */
+function placeFaces(s: PaperState, matrices: Mat4[]): Vec3[][] {
+  return s.cp.faces.map((loop, f) => loop.map((v) => applyPoint(matrices[f], [s.cp.vertices[v][0], s.cp.vertices[v][1], 0])));
+}
 
 /** A state shown still (also the end/start pose of every motion). */
-export function restFrame(s: PaperState): Frame {
-  return { model: s.faceM.map((m, f) => lift(s.heights[f] * LAYER_GAP, m)), view: s.view };
+export function restFrame(s: PaperState, offsets = true): Frame {
+  return { faces: placeFaces(s, s.faceM.map((m, f) => lift(offsets ? s.heights[f] * LAYER_GAP : 0, m))), view: s.view };
 }
 
 /** Valley/mountain: the moving stack turns rigidly about the hinge; stacking heights blend. */
@@ -43,16 +54,17 @@ export function foldMotion(r: FoldResult): Motion {
   return {
     kind: "fold",
     state: folded,
-    frame(t) {
+    frame(t, offsets = true) {
       const R = rotationAbout(point, unit, dir * Math.PI * t);
-      const model = split.faceM.map((M, f) => {
-        const h0 = split.heights[f] * LAYER_GAP;
-        const h1 = folded.heights[f] * LAYER_GAP;
+      const k = offsets ? LAYER_GAP : 0;
+      const matrices = split.faceM.map((M, f) => {
+        const h0 = split.heights[f] * k;
+        const h1 = folded.heights[f] * k;
         // Moving faces: start at h0, and end at h1 after the half turn (which maps z to -z).
         if (moving.has(f)) return multiply(R, lift(lerp(h0, -h1, t), M));
         return lift(lerp(h0, h1, t), M);
       });
-      return { model, view: split.view };
+      return { faces: placeFaces(folded, matrices), view: split.view };
     },
   };
 }
@@ -63,42 +75,89 @@ export function foldUnfoldMotion(r: FoldResult, end: PaperState): Motion {
   return {
     kind: "foldUnfold",
     state: end,
-    frame(t) {
-      return fold.frame(t < 0.5 ? 2 * t : 2 - 2 * t);
+    frame(t, offsets = true) {
+      return fold.frame(t < 0.5 ? 2 * t : 2 - 2 * t, offsets);
     },
   };
 }
 
-/** Collapse: every crease angle moves from its old to its new value; one face stays fixed. */
+/** Collapse simulation settings: samples of the path, solver iterations per sample, and where it hands over to the exact end. */
+export const COLLAPSE_SIM = { samples: 60, iterations: 40, barPasses: 4, creaseStiffness: 0.3, facetStiffness: 0.9, handover: 0.95 };
+
+/**
+ * Collapse: the paper is moved as one connected bar-and-hinge mesh (sim.ts) while every crease
+ * is driven from its old to its new angle, with one face held still. The simulated path is
+ * sampled once; near the end it blends into the exactly solved flat state. Vertices are shared
+ * between faces, so the paper never comes apart; faces may flex slightly mid-move.
+ */
 export function collapseMotion(before: PaperState, after: PaperState, root: number): Motion {
+  const cp = after.cp;
+  const vertexPositions = (s: PaperState): Vec3[] =>
+    cp.vertices.map((v, i) => {
+      const f = cp.faces.findIndex((loop) => loop.includes(i));
+      return applyPoint(s.faceM[f], [v[0], v[1], 0]);
+    });
   const a0 = before.cp.edges.map((e) => assignmentAngle(e.a));
   const a1 = after.cp.edges.map((e) => assignmentAngle(e.a));
+  const start = vertexPositions(before);
+  const end = vertexPositions(after);
+  let samples: Vec3[][] | null = null;
+  const simulate = () => {
+    const mesh = buildMesh(cp);
+    const pinned = new Set(cp.faces[root]);
+    const p = start.map((q) => [...q] as Vec3);
+    const angles = mesh.hinges.map((h) => (h.edge < 0 ? 0 : a0[h.edge]));
+    const out = [start.map((q) => [...q] as Vec3)];
+    const o = COLLAPSE_SIM;
+    for (let i = 1; i <= o.samples; i++) {
+      const tt = i / o.samples;
+      relax(mesh, p, (e) => lerp(a0[e], a1[e], tt), angles, pinned, o);
+      out.push(p.map((q) => [...q] as Vec3));
+    }
+    return out;
+  };
   return {
     kind: "collapse",
     state: after,
-    frame(t) {
-      const placed = t <= 0 ? before.faceM : t >= 1 ? after.faceM : transformsFromAngles(before, root, (e) => lerp(a0[e], a1[e], t));
-      const model = placed.map((M, f) => lift(lerp(before.heights[f], after.heights[f], t) * LAYER_GAP, M));
-      return { model, view: before.view };
+    frame(t, offsets = true) {
+      let pos: Vec3[];
+      if (t <= 0) pos = start;
+      else if (t >= 1) pos = end;
+      else {
+        samples ??= simulate();
+        const n = COLLAPSE_SIM.samples;
+        const x = t * n;
+        const i = Math.min(Math.floor(x), n - 1);
+        const u = x - i;
+        const w = smoothstep((t - COLLAPSE_SIM.handover) / (1 - COLLAPSE_SIM.handover));
+        pos = samples[i].map((q, v) => {
+          const r = samples![i + 1][v];
+          const sim: Vec3 = [lerp(q[0], r[0], u), lerp(q[1], r[1], u), lerp(q[2], r[2], u)];
+          return [lerp(sim[0], end[v][0], w), lerp(sim[1], end[v][1], w), lerp(sim[2], end[v][2], w)];
+        });
+      }
+      const faces = cp.faces.map((loop, f) => {
+        const z = offsets ? lerp(before.heights[f], after.heights[f], t) * LAYER_GAP : 0;
+        return loop.map((v) => [pos[v][0], pos[v][1], pos[v][2] + z] as Vec3);
+      });
+      return { faces, view: before.view };
     },
   };
 }
 
 /** Turn over / rotate: the whole model turns in view space. */
 export function viewMotion(before: PaperState, after: PaperState, axis: Vec3, angle: number, kind: string): Motion {
-  const rest = restFrame(before);
   return {
     kind,
     state: after,
-    frame(t) {
+    frame(t, offsets = true) {
       const view = t >= 1 ? after.view : multiply(rotationAbout([0, 0, 0], axis, angle * t), before.view);
-      return { model: rest.model, view };
+      return { faces: restFrame(before, offsets).faces, view };
     },
   };
 }
 
 /** No movement (zoom, L0 steps). */
 export function stillMotion(s: PaperState, kind = "still"): Motion {
-  const rest = restFrame(s);
-  return { kind, state: s, frame: () => rest };
+  return { kind, state: s, frame: (_t, offsets = true) => restFrame(s, offsets) };
 }
