@@ -22,9 +22,9 @@ Then open http://localhost:5173 and pick a model package to step through it (boo
 | Path | What |
 |---|---|
 | `packages/engine/` | Folding engine (pure TypeScript, no UI): paper state, action language, interpreter, motion planner, 2D diagrams. Tests in `packages/engine/test/` |
-| `app/` | Vite + React + TypeScript player (`app/src/player/`); `app/public/samples/` (reference FOLD/SVG files, used by tests) and `app/public/origami-simulator/` (kept, not wired in) |
-| `app/public/samples/` | Sample FOLD/SVG files copied from the comms repo (`npm run sync:samples`) |
-| `app/public/origami-simulator/` | Trimmed Origami Simulator used for the 3D view (`npm run sync:simulator`, needs `vendor/`) |
+| `app/` | Vite + React + TypeScript player (`app/src/player/`) |
+| `app/public/samples/` | Reference FOLD/SVG files from the comms repo, used by tests (`npm run sync:samples`) |
+| `app/public/origami-simulator/` | Trimmed Origami Simulator, kept but not used by the player (`npm run sync:simulator`) |
 | `data/schema/` | JSON Schemas: `model-package.schema.json` (Model Package), `progress.schema.json` |
 | `data/library/<id>/` | Model Packages: `model.json` (steps + actions), `images/` (book crops), `states.fold` (generated) |
 | `tools/` | Scripts (Node now, Python pipelines later) |
