@@ -8,25 +8,31 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "validate:data": "node tools/validate-data.mjs",
+    "validate:data": "tsx tools/validate-data.ts",
     "sync:samples": "node tools/sync-samples.mjs",
-    "sync:simulator": "node tools/sync-simulator.mjs"
+    "sync:simulator": "node tools/sync-simulator.mjs",
+    "test": "vitest run",
+    "build:states": "tsx tools/build-states.ts"
   },
   "dependencies": {
     "fold": "^0.12.0",
     "rabbit-ear": "^0.9.41",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": ">=20"

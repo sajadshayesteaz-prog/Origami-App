@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { withFoldAngles, type Fold } from "../lib/foldDoc";
-import { useT } from "../i18n";
 
 /** What to fold: one FOLD frame, or an Origami Simulator–style SVG crease pattern. */
 export type SimInput = { kind: "fold"; frame: Fold; title?: string } | { kind: "svg"; svg: string; filename: string };
@@ -17,7 +16,6 @@ export function Simulator3D({ input }: { input: SimInput | null }) {
   const [ready, setReady] = useState(false);
   const [percent, setPercent] = useState(100);
   const [warning, setWarning] = useState<string | null>(null);
-  const t = useT();
 
   const post = (msg: object) => frameEl.current?.contentWindow?.postMessage(msg, "*");
 
@@ -47,19 +45,19 @@ export function Simulator3D({ input }: { input: SimInput | null }) {
 
   return (
     <div className="panel">
-      <div className="panel-title">{t("view3d")}</div>
+      <div className="panel-title">Folded state (3D)</div>
       <div className="sim-host">
         <iframe ref={frameEl} src={SIM_URL} title="Origami Simulator" />
-        {!ready && <div className="overlay">{t("simLoading")}</div>}
+        {!ready && <div className="overlay">Loading simulator…</div>}
         {warning && <div className="sim-warning">{warning}</div>}
       </div>
       <div className="sim-controls">
         <label>
-          {t("foldPercent")}
+          Fold amount
           <input type="range" min={0} max={100} value={percent} onChange={(e) => setPercent(Number(e.target.value))} />
           <span className="num">{percent}%</span>
         </label>
-        <button onClick={() => post({ op: "resetView" })}>{t("resetView")}</button>
+        <button onClick={() => post({ op: "resetView" })}>Reset view</button>
       </div>
     </div>
   );

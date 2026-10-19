@@ -9,7 +9,7 @@
   --valley: royalblue;
   --flat: #bbb;
   --boundary: #111;
-  font-family: Tahoma, "Segoe UI", system-ui, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
@@ -195,4 +195,79 @@ button:disabled {
 .num {
   direction: ltr;
   min-width: 3.5em;
+}
+
+/* Header navigation */
+.app-header nav {
+  display: flex;
+  gap: 8px;
+}
+.app-header nav .active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Model player: book image | diagram | 3D */
+.muted {
+  color: var(--muted);
+}
+.caption {
+  margin-bottom: 12px;
+}
+.warning {
+  color: #8a6d00;
+  font-size: 0.85rem;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.pane {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}
+.pane figcaption {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.pane img {
+  max-width: 100%;
+}
+.diagram svg {
+  width: 100%;
+  height: min(60vh, 480px);
+}
+.view3d {
+  height: min(60vh, 480px);
+}
+.view3d canvas {
+  display: block;
+}
+.steps {
+  margin-top: 16px;
+  columns: 2 320px;
+  font-size: 0.9rem;
+}
+.steps .current {
+  font-weight: bold;
+}
+.steps .failed button {
+  color: #b00020;
+}
+button.link {
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  text-align: start;
+  cursor: pointer;
 }

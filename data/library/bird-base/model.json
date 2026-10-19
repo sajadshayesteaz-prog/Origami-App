@@ -1,0 +1,709 @@
+{
+  "$schema": "../../schema/model-package.schema.json",
+  "format": "origami-model-package/1",
+  "id": "bird-base",
+  "title": "Bird base",
+  "designer": "Traditional",
+  "source": {
+    "note": "Scripted for task 002 (no book images)."
+  },
+  "difficulty": {
+    "scale": "1-5",
+    "value": 1
+  },
+  "paper": {
+    "shape": "square",
+    "colorUp": "#ffffff",
+    "colorDown": "#e8758f"
+  },
+  "category": "base",
+  "steps": [
+    {
+      "id": "s1",
+      "label": "1",
+      "caption": {
+        "original": "Valley fold along the diagonal and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              "A",
+              "C"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "label": "2",
+      "caption": {
+        "original": "Valley fold along the other diagonal and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              "B",
+              "D"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "label": "3",
+      "caption": {
+        "original": "Turn the paper over.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "turnOver"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "label": "4",
+      "caption": {
+        "original": "Valley fold in half and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "mid": [
+                  "A",
+                  "B"
+                ]
+              },
+              {
+                "mid": [
+                  "D",
+                  "C"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "label": "5",
+      "caption": {
+        "original": "Valley fold in half the other way and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "mid": [
+                  "A",
+                  "D"
+                ]
+              },
+              {
+                "mid": [
+                  "B",
+                  "C"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "label": "6",
+      "caption": {
+        "original": "Turn the paper over.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "turnOver"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "label": "7",
+      "caption": {
+        "original": "Collapse along the creases: the diagonals A–O and O–C are valleys, the midlines are mountains.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "collapse",
+          "creases": [
+            {
+              "segment": [
+                "O",
+                "A"
+              ],
+              "type": "V"
+            },
+            {
+              "segment": [
+                "O",
+                "C"
+              ],
+              "type": "V"
+            },
+            {
+              "line": {
+                "through": [
+                  {
+                    "mid": [
+                      "A",
+                      "B"
+                    ]
+                  },
+                  {
+                    "mid": [
+                      "D",
+                      "C"
+                    ]
+                  }
+                ]
+              },
+              "type": "M"
+            },
+            {
+              "line": {
+                "through": [
+                  {
+                    "mid": [
+                      "A",
+                      "D"
+                    ]
+                  },
+                  {
+                    "mid": [
+                      "B",
+                      "C"
+                    ]
+                  }
+                ]
+              },
+              "type": "M"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "label": "8",
+      "caption": {
+        "original": "Rotate so the open corners point down. This is the square base.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "rotate",
+          "degrees": -135
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "label": "9",
+      "caption": {
+        "original": "Fold the lower right edge of the front flap to the centre line and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "B",
+                  {
+                    "mid": [
+                      "B",
+                      "C"
+                    ]
+                  }
+                ]
+              },
+              {
+                "through": [
+                  "B",
+                  "O"
+                ]
+              }
+            ],
+            "pick": {
+              "near": {
+                "mid": [
+                  "B",
+                  "C"
+                ]
+              }
+            }
+          },
+          "move": {
+            "mid": [
+              "B",
+              "C"
+            ]
+          },
+          "layers": {
+            "top": 1
+          },
+          "as": "k1"
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "label": "10",
+      "caption": {
+        "original": "Fold the lower left edge of the front flap to the centre line and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "B",
+                  {
+                    "mid": [
+                      "B",
+                      "A"
+                    ]
+                  }
+                ]
+              },
+              {
+                "through": [
+                  "B",
+                  "O"
+                ]
+              }
+            ],
+            "pick": {
+              "near": {
+                "mid": [
+                  "B",
+                  "A"
+                ]
+              }
+            }
+          },
+          "move": {
+            "mid": [
+              "B",
+              "A"
+            ]
+          },
+          "layers": {
+            "top": 1
+          },
+          "as": "k2"
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "label": "11",
+      "caption": {
+        "original": "Fold the top triangle down over the creases and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "x": [
+                  {
+                    "name": "k1"
+                  },
+                  {
+                    "through": [
+                      "O",
+                      {
+                        "mid": [
+                          "B",
+                          "C"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "as": "p1"
+              },
+              {
+                "x": [
+                  {
+                    "name": "k2"
+                  },
+                  {
+                    "through": [
+                      "O",
+                      {
+                        "mid": [
+                          "B",
+                          "A"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "as": "p2"
+              }
+            ]
+          },
+          "move": "O"
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "label": "12",
+      "caption": {
+        "original": "Petal fold: lift the bottom corner of the front layer up along the horizontal crease; the sides fold in on the creases.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "collapse",
+          "creases": [
+            {
+              "segment": [
+                "B",
+                {
+                  "name": "p1"
+                }
+              ],
+              "assign": "M"
+            },
+            {
+              "segment": [
+                "B",
+                {
+                  "name": "p2"
+                }
+              ],
+              "assign": "M"
+            },
+            {
+              "segment": [
+                {
+                  "mid": [
+                    "B",
+                    "C"
+                  ]
+                },
+                {
+                  "name": "p1"
+                }
+              ],
+              "layers": {
+                "top": 1
+              },
+              "assign": "V"
+            },
+            {
+              "segment": [
+                {
+                  "mid": [
+                    "B",
+                    "A"
+                  ]
+                },
+                {
+                  "name": "p2"
+                }
+              ],
+              "layers": {
+                "top": 1
+              },
+              "assign": "V"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "label": "13",
+      "caption": {
+        "original": "Turn the model over.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "turnOver"
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "label": "14",
+      "caption": {
+        "original": "Fold the lower right edge of the front flap to the centre line and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "D",
+                  {
+                    "mid": [
+                      "D",
+                      "A"
+                    ]
+                  }
+                ]
+              },
+              {
+                "through": [
+                  "D",
+                  "O"
+                ]
+              }
+            ],
+            "pick": {
+              "near": {
+                "mid": [
+                  "D",
+                  "A"
+                ]
+              }
+            }
+          },
+          "move": {
+            "mid": [
+              "D",
+              "A"
+            ]
+          },
+          "layers": {
+            "top": 1
+          },
+          "as": "k3"
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "label": "15",
+      "caption": {
+        "original": "Fold the lower left edge of the front flap to the centre line and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "D",
+                  {
+                    "mid": [
+                      "D",
+                      "C"
+                    ]
+                  }
+                ]
+              },
+              {
+                "through": [
+                  "D",
+                  "O"
+                ]
+              }
+            ],
+            "pick": {
+              "near": {
+                "mid": [
+                  "D",
+                  "C"
+                ]
+              }
+            }
+          },
+          "move": {
+            "mid": [
+              "D",
+              "C"
+            ]
+          },
+          "layers": {
+            "top": 1
+          },
+          "as": "k4"
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "label": "16",
+      "caption": {
+        "original": "Fold the top triangle down over the creases and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "x": [
+                  {
+                    "name": "k3"
+                  },
+                  {
+                    "through": [
+                      "O",
+                      {
+                        "mid": [
+                          "D",
+                          "A"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "as": "p3"
+              },
+              {
+                "x": [
+                  {
+                    "name": "k4"
+                  },
+                  {
+                    "through": [
+                      "O",
+                      {
+                        "mid": [
+                          "D",
+                          "C"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "as": "p4"
+              }
+            ]
+          },
+          "move": "O"
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "label": "17",
+      "caption": {
+        "original": "Petal fold the second side. This is the bird base.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "collapse",
+          "creases": [
+            {
+              "segment": [
+                "D",
+                {
+                  "name": "p3"
+                }
+              ],
+              "assign": "M"
+            },
+            {
+              "segment": [
+                "D",
+                {
+                  "name": "p4"
+                }
+              ],
+              "assign": "M"
+            },
+            {
+              "segment": [
+                {
+                  "mid": [
+                    "D",
+                    "A"
+                  ]
+                },
+                {
+                  "name": "p3"
+                }
+              ],
+              "layers": {
+                "top": 1
+              },
+              "assign": "V"
+            },
+            {
+              "segment": [
+                {
+                  "mid": [
+                    "D",
+                    "C"
+                  ]
+                },
+                {
+                  "name": "p4"
+                }
+              ],
+              "layers": {
+                "top": 1
+              },
+              "assign": "V"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

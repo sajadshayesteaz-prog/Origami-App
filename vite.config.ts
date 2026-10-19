@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -5,5 +6,8 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   root: "app",
   plugins: [react()],
+  resolve: {
+    alias: { "@origami/engine": fileURLToPath(new URL("./packages/engine/src/index.ts", import.meta.url)) },
+  },
   build: { outDir: "../dist", emptyOutDir: true },
 });

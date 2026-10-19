@@ -1,0 +1,203 @@
+{
+  "$schema": "../../schema/model-package.schema.json",
+  "format": "origami-model-package/1",
+  "id": "waterbomb-base",
+  "title": "Waterbomb base",
+  "designer": "Traditional",
+  "source": {
+    "note": "Scripted for task 002 (no book images)."
+  },
+  "difficulty": {
+    "scale": "1-5",
+    "value": 1
+  },
+  "paper": {
+    "shape": "square",
+    "colorUp": "#ffffff",
+    "colorDown": "#e8758f"
+  },
+  "category": "base",
+  "steps": [
+    {
+      "id": "s1",
+      "label": "1",
+      "caption": {
+        "original": "Valley fold in half and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "mid": [
+                  "A",
+                  "B"
+                ]
+              },
+              {
+                "mid": [
+                  "D",
+                  "C"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "label": "2",
+      "caption": {
+        "original": "Valley fold in half the other way and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              {
+                "mid": [
+                  "A",
+                  "D"
+                ]
+              },
+              {
+                "mid": [
+                  "B",
+                  "C"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "label": "3",
+      "caption": {
+        "original": "Turn the paper over.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "turnOver"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "label": "4",
+      "caption": {
+        "original": "Valley fold along the diagonal and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              "A",
+              "C"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "label": "5",
+      "caption": {
+        "original": "Valley fold along the other diagonal and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              "B",
+              "D"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "label": "6",
+      "caption": {
+        "original": "Turn the paper over.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "turnOver"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "label": "7",
+      "caption": {
+        "original": "Collapse: the diagonals are mountains, the horizontal midline is a valley.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "collapse",
+          "creases": [
+            {
+              "line": {
+                "through": [
+                  "A",
+                  "C"
+                ]
+              },
+              "type": "M"
+            },
+            {
+              "line": {
+                "through": [
+                  "B",
+                  "D"
+                ]
+              },
+              "type": "M"
+            },
+            {
+              "line": {
+                "through": [
+                  {
+                    "mid": [
+                      "A",
+                      "D"
+                    ]
+                  },
+                  {
+                    "mid": [
+                      "B",
+                      "C"
+                    ]
+                  }
+                ]
+              },
+              "type": "V"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@origami/engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Origami folding engine: paper state, action language, motion planner, diagrams. No UI.",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

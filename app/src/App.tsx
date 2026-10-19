@@ -1,48 +1,25 @@
-import { useEffect, useState } from "react";
-import { LangContext, useT, type Lang } from "./i18n";
+import { useState } from "react";
+import { Player } from "./player/Player";
 import { Viewer } from "./components/Viewer";
 
-const LANG_KEY = "origami.lang";
-
-function initialLang(): Lang {
-  try {
-    return localStorage.getItem(LANG_KEY) === "en" ? "en" : "fa";
-  } catch {
-    return "fa";
-  }
-}
+type Tab = "player" | "fold";
 
 export function App() {
-  const [lang, setLang] = useState<Lang>(initialLang);
-
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
-    try {
-      localStorage.setItem(LANG_KEY, lang);
-    } catch {
-      /* storage unavailable */
-    }
-  }, [lang]);
-
+  const [tab, setTab] = useState<Tab>("player");
   return (
-    <LangContext.Provider value={lang}>
-      <Header onToggleLang={() => setLang(lang === "fa" ? "en" : "fa")} />
-      <main>
-        <Viewer lang={lang} />
-      </main>
-    </LangContext.Provider>
-  );
-}
-
-function Header({ onToggleLang }: { onToggleLang: () => void }) {
-  const t = useT();
-  return (
-    <header className="app-header">
-      <h1>{t("appTitle")}</h1>
-      <button className="lang-toggle" onClick={onToggleLang}>
-        {t("otherLang")}
-      </button>
-    </header>
+    <>
+      <header className="app-header">
+        <h1>Origami</h1>
+        <nav>
+          <button className={tab === "player" ? "active" : ""} onClick={() => setTab("player")}>
+            Model player
+          </button>
+          <button className={tab === "fold" ? "active" : ""} onClick={() => setTab("fold")}>
+            FOLD viewer
+          </button>
+        </nav>
+      </header>
+      <main>{tab === "player" ? <Player /> : <Viewer />}</main>
+    </>
   );
 }

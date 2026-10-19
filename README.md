@@ -1,6 +1,6 @@
 # Origami-App
 
-Personal bilingual (fa/en) origami app: basic folds guide, model library with step-by-step diagrams and 3D, and design tools.
+Personal origami app (English UI): turns book diagrams into step-by-step 2D diagrams and 3D folding, driven by our own folding engine.
 
 Planning, task sheets and reports live in the companion repo **Claude-Code-for-origami**, cloned next to this one. See `CLAUDE.md`.
 
@@ -11,20 +11,22 @@ Planning, task sheets and reports live in the companion repo **Claude-Code-for-o
 4. Open Claude Code in this folder and ask it to run the current task sheet.
 
 ## Run the app
+Double-click `run-dev.bat` (puts the portable Node in `%LOCALAPPDATA%\Programs\nodejs` on PATH, installs if needed, opens the browser), or:
 ```
 npm install
 npm run dev
 ```
-Then open http://localhost:5173. The viewer loads `crane-sequence.fold` by default; pick another sample or open a `.fold` / `.svg` file.
+Then open http://localhost:5173. **Model player**: pick a model package and step through it (diagram | 3D). **FOLD viewer**: the task-001 viewer for raw `.fold` / `.svg` files.
 
 ## Layout
 | Path | What |
 |---|---|
-| `app/` | Vite + React + TypeScript web app (`app/src/`), static files in `app/public/` |
+| `packages/engine/` | Folding engine (pure TypeScript, no UI): paper state, action language, interpreter, motion planner, 2D diagrams. Tests in `packages/engine/test/` |
+| `app/` | Vite + React + TypeScript player (`app/src/player/`), legacy FOLD viewer (`app/src/components/`), static files in `app/public/` |
 | `app/public/samples/` | Sample FOLD/SVG files copied from the comms repo (`npm run sync:samples`) |
 | `app/public/origami-simulator/` | Trimmed Origami Simulator used for the 3D view (`npm run sync:simulator`, needs `vendor/`) |
-| `data/schema/` | JSON Schemas: Model, Step, Progress |
-| `data/library/<id>/` | Library models: `model.json`, `steps/NNN.svg|png`, optional FOLD file |
+| `data/schema/` | JSON Schemas: `model-package.schema.json` (Model Package), `progress.schema.json` |
+| `data/library/<id>/` | Model Packages: `model.json` (steps + actions), `images/` (book crops), `states.fold` (generated) |
 | `tools/` | Scripts (Node now, Python pipelines later) |
 | `vendor/` | Upstream sources (git-ignored): `bash ../Claude-Code-for-origami/sources/fetch-sources.sh vendor` |
 
@@ -33,7 +35,11 @@ Then open http://localhost:5173. The viewer loads `crane-sequence.fold` by defau
 |---|---|
 | `npm run dev` | Dev server |
 | `npm run build` | Type-check and production build to `dist/` |
-| `npm run validate:data` | Validate `data/library/*/model.json` and example progress files |
+| `npm test` | Engine unit tests (Vitest) |
+| `npm run validate:data` | Validate every Model Package (schema, engine runs every step, `states.fold` up to date) |
+| `npm run build:states` | Regenerate `data/library/*/states.fold` from `model.json` |
 | `npm run sync:samples` | Re-copy samples from the comms repo |
 | `npm run sync:simulator` | Re-copy Origami Simulator from `vendor/` and patch it for embedding |
 | `node tools/fold-frames-to-svg.mjs <file.fold> <outDir>` | One crease-pattern SVG per frame |
+
+The action language is specified in `Claude-Code-for-origami/docs/action-language.md`.

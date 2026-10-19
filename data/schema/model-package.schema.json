@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://origami-app.local/schema/model-package.schema.json",
+  "title": "Model Package (model.json)",
+  "description": "origami-model-package/1 — see Claude-Code-for-origami/docs/core-design.md §3 and docs/action-language.md.",
+  "type": "object",
+  "required": ["format", "id", "title", "paper", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "format": { "const": "origami-model-package/1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "title": { "type": "string" },
+    "designer": { "type": "string" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "book": { "type": "string" },
+        "pages": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "note": { "type": "string" }
+      }
+    },
+    "difficulty": {
+      "type": "object",
+      "required": ["scale", "value"],
+      "additionalProperties": false,
+      "properties": { "scale": { "type": "string" }, "value": { "type": "number" } }
+    },
+    "paper": {
+      "type": "object",
+      "required": ["shape"],
+      "additionalProperties": false,
+      "properties": {
+        "shape": { "const": "square" },
+        "size": { "type": "string" },
+        "colorUp": { "type": "string" },
+        "colorDown": { "type": "string" }
+      }
+    },
+    "category": { "type": "string" },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["id", "label", "level"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "image": {
+          "type": "object",
+          "required": ["file"],
+          "additionalProperties": false,
+          "properties": {
+            "file": { "type": "string", "pattern": "^images/" },
+            "page": { "type": "integer", "minimum": 1 },
+            "bbox": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 }
+          }
+        },
+        "caption": {
+          "type": "object",
+          "required": ["original"],
+          "additionalProperties": false,
+          "properties": { "original": { "type": "string" }, "lang": { "type": "string" } }
+        },
+        "level": { "enum": ["L0", "L1", "L2"] },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "notes": { "type": "string" }
+      },
+      "if": { "properties": { "level": { "const": "L0" } } },
+      "then": { "not": { "required": ["actions"] } },
+      "else": { "required": ["actions"] }
+    },
+    "point": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } }, "additionalProperties": false },
+        { "type": "object", "required": ["mid"], "properties": { "mid": { "type": "array", "items": { "$ref": "#/$defs/point" }, "minItems": 2, "maxItems": 2 }, "as": { "type": "string" } }, "additionalProperties": false },
+        { "type": "object", "required": ["at"], "properties": { "at": { "type": "array", "minItems": 3, "maxItems": 3 }, "as": { "type": "string" } }, "additionalProperties": false },
+        { "type": "object", "required": ["x"], "properties": { "x": { "type": "array", "items": { "$ref": "#/$defs/line" }, "minItems": 2, "maxItems": 2 }, "as": { "type": "string" } }, "additionalProperties": false },
+        { "type": "object", "required": ["cp"], "properties": { "cp": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }, "as": { "type": "string" } }, "additionalProperties": false }
+      ]
+    },
+    "pick": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "object", "required": ["near"], "properties": { "near": { "$ref": "#/$defs/point" } }, "additionalProperties": false }
+      ]
+    },
+    "line": {
+      "type": "object",
+      "description": "Fold-line definition: through (O1), bring+to (O2), edgeTo (O3), perpendicularTo+through (O4), bring+onto+through (O5), bring[2]+onto[2] (O6), bring+onto+perpendicularTo (O7), or name.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "through": {},
+        "bring": {},
+        "to": { "$ref": "#/$defs/point" },
+        "onto": {},
+        "edgeTo": { "type": "array", "items": { "$ref": "#/$defs/line" }, "minItems": 2, "maxItems": 2 },
+        "perpendicularTo": { "$ref": "#/$defs/line" },
+        "name": { "type": "string" },
+        "pick": { "$ref": "#/$defs/pick" }
+      }
+    },
+    "layers": {
+      "oneOf": [
+        { "const": "all" },
+        { "type": "object", "required": ["top"], "properties": { "top": { "type": "integer", "minimum": 1 } }, "additionalProperties": false },
+        { "type": "object", "required": ["bottom"], "properties": { "bottom": { "type": "integer", "minimum": 1 } }, "additionalProperties": false },
+        { "type": "object", "required": ["flap"], "properties": { "flap": { "$ref": "#/$defs/point" } }, "additionalProperties": false },
+        { "type": "object", "required": ["faces"], "properties": { "faces": { "type": "array", "items": { "type": "integer" } } }, "additionalProperties": false }
+      ]
+    },
+    "crease": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segment": { "type": "array", "items": { "$ref": "#/$defs/point" }, "minItems": 2, "maxItems": 2 },
+        "line": { "$ref": "#/$defs/line" },
+        "layers": { "$ref": "#/$defs/layers" },
+        "type": { "enum": ["V", "M", "F"] },
+        "assign": { "enum": ["V", "M", "F"] }
+      },
+      "oneOf": [{ "required": ["segment"] }, { "required": ["line"] }],
+      "anyOf": [{ "required": ["type"] }, { "required": ["assign"] }]
+    },
+    "action": {
+      "type": "object",
+      "required": ["op"],
+      "properties": { "op": { "enum": ["valley", "mountain", "foldUnfold", "unfold", "collapse", "turnOver", "rotate", "zoom"] }, "text": { "type": "string" } },
+      "allOf": [
+        {
+          "if": { "properties": { "op": { "enum": ["valley", "mountain", "foldUnfold", "unfold"] } } },
+          "then": {
+            "required": ["line"],
+            "properties": {
+              "line": { "$ref": "#/$defs/line" },
+              "layers": { "$ref": "#/$defs/layers" },
+              "move": { "$ref": "#/$defs/point" },
+              "type": { "enum": ["V", "M"] },
+              "as": { "type": "string" }
+            },
+            "propertyNames": { "enum": ["op", "text", "line", "layers", "move", "type", "as"] }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "collapse" } } },
+          "then": {
+            "required": ["creases"],
+            "properties": { "creases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/crease" } }, "root": { "$ref": "#/$defs/point" }, "solution": { "type": "integer", "minimum": 0 } },
+            "propertyNames": { "enum": ["op", "text", "creases", "root", "solution"] }
+          }
+        },
+        { "if": { "properties": { "op": { "const": "turnOver" } } }, "then": { "properties": { "axis": { "enum": ["vertical", "horizontal"] } }, "propertyNames": { "enum": ["op", "text", "axis"] } } },
+        { "if": { "properties": { "op": { "const": "rotate" } } }, "then": { "required": ["degrees"], "properties": { "degrees": { "type": "number" } }, "propertyNames": { "enum": ["op", "text", "degrees"] } } },
+        {
+          "if": { "properties": { "op": { "const": "zoom" } } },
+          "then": { "required": ["region"], "properties": { "region": { "oneOf": [{ "type": "null" }, { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 }] } }, "propertyNames": { "enum": ["op", "text", "region"] } }
+        }
+      ]
+    }
+  }
+}

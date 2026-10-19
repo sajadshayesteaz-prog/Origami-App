@@ -1,0 +1,110 @@
+{
+  "$schema": "../../schema/model-package.schema.json",
+  "format": "origami-model-package/1",
+  "id": "kite-base",
+  "title": "Kite base",
+  "designer": "Traditional",
+  "source": {
+    "note": "Scripted for task 002 (no book images)."
+  },
+  "difficulty": {
+    "scale": "1-5",
+    "value": 1
+  },
+  "paper": {
+    "shape": "square",
+    "colorUp": "#ffffff",
+    "colorDown": "#e8758f"
+  },
+  "category": "base",
+  "steps": [
+    {
+      "id": "s1",
+      "label": "1",
+      "caption": {
+        "original": "Valley fold along the diagonal and unfold.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "foldUnfold",
+          "line": {
+            "through": [
+              "A",
+              "C"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "label": "2",
+      "caption": {
+        "original": "Fold edge AB to the diagonal.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "valley",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "A",
+                  "B"
+                ]
+              },
+              {
+                "through": [
+                  "A",
+                  "C"
+                ]
+              }
+            ],
+            "pick": {
+              "near": "B"
+            }
+          },
+          "move": "B"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "label": "3",
+      "caption": {
+        "original": "Fold edge AD to the diagonal. This is the kite base.",
+        "lang": "en"
+      },
+      "level": "L1",
+      "actions": [
+        {
+          "op": "valley",
+          "line": {
+            "edgeTo": [
+              {
+                "through": [
+                  "A",
+                  "D"
+                ]
+              },
+              {
+                "through": [
+                  "A",
+                  "C"
+                ]
+              }
+            ],
+            "pick": {
+              "near": "D"
+            }
+          },
+          "move": "D"
+        }
+      ]
+    }
+  ]
+}

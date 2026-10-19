@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { parseFoldDoc, type FoldDoc } from "../lib/foldDoc";
-import { formatNumber, useT, type Lang } from "../i18n";
 import { CreasePattern2D } from "./CreasePattern2D";
 import { Simulator3D, type SimInput } from "./Simulator3D";
 
 const SAMPLES_URL = `${import.meta.env.BASE_URL}samples/`;
 const DEFAULT_SAMPLE = "crane-sequence.fold";
 
-export function Viewer({ lang }: { lang: Lang }) {
-  const t = useT();
+/** Legacy FOLD/SVG viewer from task 001: crease pattern + Origami Simulator (physics view). */
+export function Viewer() {
   const [samples, setSamples] = useState<string[]>([]);
   const [doc, setDoc] = useState<FoldDoc | null>(null);
   const [index, setIndex] = useState(0);
@@ -43,14 +42,11 @@ export function Viewer({ lang }: { lang: Lang }) {
   const count = doc?.frames.length ?? 0;
   const go = useCallback((delta: number) => setIndex((i) => Math.min(Math.max(i + delta, 0), Math.max(count - 1, 0))), [count]);
 
-  // Arrow keys follow reading direction: in RTL (fa) the next step is to the left.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-      const forward = lang === "fa" ? "ArrowLeft" : "ArrowRight";
-      const back = lang === "fa" ? "ArrowRight" : "ArrowLeft";
-      if (e.key === forward || e.key === "PageDown") go(1);
-      else if (e.key === back || e.key === "PageUp") go(-1);
+      if (e.key === "ArrowRight" || e.key === "PageDown") go(1);
+      else if (e.key === "ArrowLeft" || e.key === "PageUp") go(-1);
       else if (e.key === "Home") setIndex(0);
       else if (e.key === "End") setIndex(Math.max(count - 1, 0));
       else return;
@@ -58,7 +54,7 @@ export function Viewer({ lang }: { lang: Lang }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, lang, count]);
+  }, [go, count]);
 
   const frame = doc?.frames[index] ?? null;
   const simInput = useMemo<SimInput | null>(() => {
@@ -72,9 +68,9 @@ export function Viewer({ lang }: { lang: Lang }) {
     <section className="viewer">
       <div className="toolbar">
         <label>
-          {t("sample")}:{" "}
+          Sample:{" "}
           <select value={samples.includes(doc?.name ?? "") ? doc!.name : ""} onChange={(e) => e.target.value && openSample(e.target.value)}>
-            <option value="">{t("chooseSample")}</option>
+            <option value="">Choose a sample…</option>
             {samples.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -83,7 +79,7 @@ export function Viewer({ lang }: { lang: Lang }) {
           </select>
         </label>
         <label className="file-button">
-          {t("openFile")} <bdi dir="ltr">(.fold / .svg)</bdi>
+          Open file <bdi dir="ltr">(.fold / .svg)</bdi>
           <input
             type="file"
             accept=".fold,.svg,.json"
@@ -97,20 +93,20 @@ export function Viewer({ lang }: { lang: Lang }) {
         {doc && <span className="doc-title">{doc.title}</span>}
       </div>
 
-      {error && <div className="error">{t("loadError")} — {error}</div>}
-      {!doc && !error && <div className="hint">{t("noFile")}</div>}
+      {error && <div className="error">Could not read file — {error}</div>}
+      {!doc && !error && <div className="hint">Choose a sample or open a file.</div>}
 
       <div className="stepper">
         <button onClick={() => go(-1)} disabled={index <= 0}>
-          {t("prev")}
+          Previous
         </button>
         <span className="counter" data-testid="frame-counter">
-          {t("frame")} {formatNumber(count ? index + 1 : 0, lang)} {t("of")} {formatNumber(count, lang)}
+          Step {count ? index + 1 : 0} of {count}
         </span>
         <button onClick={() => go(1)} disabled={index >= count - 1}>
-          {t("next")}
+          Next
         </button>
-        <span className="hint">{t("keyboardHint")}</span>
+        <span className="hint">Arrow keys: previous / next step</span>
       </div>
 
       <div className="views">
