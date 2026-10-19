@@ -1,20 +1,65 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPackage, type ModelPackage, type RunResult } from "@origami/engine";
 import { Fold3D } from "./Fold3D";
-
-// Model Packages are data files in data/library/<id>/; images sit next to model.json.
-const models = import.meta.glob<ModelPackage>("../../../data/library/*/model.json", { eager: true, import: "default" });
-const images = import.meta.glob<string>("../../../data/library/*/images/*", { eager: true, import: "default", query: "?url" });
-const packages = Object.entries(models)
-  .map(([path, pkg]) => ({ dir: path.replace(/model\.json$/, ""), pkg }))
-  .sort((a, b) => a.pkg.title.localeCompare(b.pkg.title));
+import { fileUrl, loadLibrary, loadModel, stars, type BookSummary } from "./library";
+import { ZoomImage } from "./ZoomImage";
 
 const MOTION_MS = 1200;
 const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
 
+/** Library sidebar (books → models) and the selected model's player. */
 export function Player() {
-  const [pkgIndex, setPkgIndex] = useState(() => Math.max(0, packages.findIndex((p) => p.pkg.id === "bird-base")));
-  const { pkg, dir } = packages[pkgIndex];
+  const [books, setBooks] = useState<BookSummary[]>([]);
+  const [sel, setSel] = useState<{ book: string; id: string }>({ book: "scripted", id: "bird-base" });
+  const [pkg, setPkg] = useState<ModelPackage | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({ scripted: true });
+
+  useEffect(() => {
+    loadLibrary().then(setBooks).catch((e) => setError(String(e)));
+  }, []);
+  useEffect(() => {
+    setPkg(null);
+    loadModel(sel.book, sel.id)
+      .then((m) => (setPkg(m), setError(null)))
+      .catch((e) => setError(String(e)));
+  }, [sel]);
+
+  return (
+    <div className="player-layout">
+      <aside className="library" data-testid="library">
+        {books.map((b) => (
+          <div key={b.slug} className="book">
+            <button className="book-title" onClick={() => setOpen((o) => ({ ...o, [b.slug]: !o[b.slug] }))}>
+              {open[b.slug] ? "▾" : "▸"} {b.title} <span className="muted">({b.models.length})</span>
+            </button>
+            {open[b.slug] && (
+              <ul>
+                {b.models.map((m) => (
+                  <li key={m.id} className={sel.book === b.slug && sel.id === m.id ? "current" : ""}>
+                    <button className="link" onClick={() => setSel({ book: b.slug, id: m.id })} data-testid={`model-${b.slug}-${m.id}`}>
+                      {m.title} <span className="stars">{stars(m.difficulty)}</span>
+                      <span className="muted">
+                        {" "}
+                        {m.steps} steps · {["L0", "L1", "L2"].filter((l) => m.levels[l]).map((l) => `${m.levels[l]} ${l}`).join(", ")}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </aside>
+      <div className="player-main">
+        {error && <div className="error">{error}</div>}
+        {pkg ? <ModelPlayer key={`${sel.book}/${sel.id}`} pkg={pkg} book={sel.book} /> : !error && <div className="muted">Loading…</div>}
+      </div>
+    </div>
+  );
+}
+
+function ModelPlayer({ pkg, book }: { pkg: ModelPackage; book: string }) {
   const run: RunResult = useMemo(() => runPackage(pkg), [pkg]);
   const count = run.steps.length;
 
@@ -56,13 +101,6 @@ export function Player() {
     [count, play, run],
   );
 
-  useEffect(() => {
-    setIndex(0);
-    stop();
-    setT(1);
-    setResetKey((k) => k + 1);
-  }, [pkg]);
-
   // Simulated motions (collapse) are computed on first use; prepare the next step's while idle.
   useEffect(() => {
     const id = setTimeout(() => run.steps[index + 1]?.motions.forEach((m) => m.frame(0.5)), 400);
@@ -88,24 +126,18 @@ export function Player() {
   const seg = Math.min(Math.floor(t * n), n - 1);
   const localT = ease(Math.min(1, t * n - seg));
   const motion = step.motions[seg];
-  const image = step.step.image ? images[`${dir}${step.step.image.file}`] : undefined;
+  const image = step.step.image ? fileUrl(book, `${pkg.id}/${step.step.image.file}`) : undefined;
+  const scripted = step.step.level !== "L0";
   const colorUp = pkg.paper.colorUp ?? "#ffffff";
   const colorDown = pkg.paper.colorDown ?? "#e8758f";
 
   return (
     <section className="player">
       <div className="toolbar">
-        <label>
-          Model:{" "}
-          <select value={pkgIndex} onChange={(e) => setPkgIndex(Number(e.target.value))} data-testid="model-select">
-            {packages.map((p, i) => (
-              <option key={p.pkg.id} value={i}>
-                {p.pkg.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <span className="muted">{pkg.designer}</span>
+        <h2 className="model-title" data-testid="model-title">{pkg.title}</h2>
+        <span className="muted">
+          {[pkg.designer, pkg.source?.book, pkg.difficulty ? `difficulty ${pkg.difficulty.value}` : null, pkg.paper.size].filter(Boolean).join(" · ")}
+        </span>
       </div>
 
       <div className="stepper">
@@ -124,7 +156,9 @@ export function Player() {
         <button onClick={() => go(count - 1, false)} disabled={index >= count - 1}>
           End
         </button>
-        <button onClick={() => play(n)}>Replay step</button>
+        <button onClick={() => play(n)} disabled={!scripted}>
+          Replay step
+        </button>
         <label className="progress">
           Progress
           <input
@@ -153,21 +187,26 @@ export function Player() {
         {step.error && <div className="error">{step.error}</div>}
       </div>
 
-      <div className="panes">
+      <div className={scripted ? "panes" : "panes single"}>
         {image && (
           <figure className="pane">
-            <figcaption>Book</figcaption>
-            <img src={image} alt={`step ${step.step.label}`} />
+            <figcaption>Book{step.step.image?.page ? `, page ${step.step.image.page}` : ""}</figcaption>
+            <ZoomImage src={image} alt={`step ${step.step.label}`} />
           </figure>
         )}
-        <figure className="pane">
-          <figcaption>Diagram</figcaption>
-          <div className="diagram" data-testid="diagram" dangerouslySetInnerHTML={{ __html: step.diagram }} />
-        </figure>
-        <figure className="pane">
-          <figcaption>3D</figcaption>
-          <Fold3D motion={motion} t={localT} colorUp={colorUp} colorDown={colorDown} resetKey={resetKey} />
-        </figure>
+        {scripted && (
+          <>
+            <figure className="pane">
+              <figcaption>Diagram</figcaption>
+              <div className="diagram" data-testid="diagram" dangerouslySetInnerHTML={{ __html: step.diagram }} />
+            </figure>
+            <figure className="pane">
+              <figcaption>3D</figcaption>
+              <Fold3D motion={motion} t={localT} colorUp={colorUp} colorDown={colorDown} resetKey={resetKey} />
+            </figure>
+          </>
+        )}
+        {!scripted && !image && <div className="muted">This step has no image and no script.</div>}
       </div>
 
       <ol className="steps">

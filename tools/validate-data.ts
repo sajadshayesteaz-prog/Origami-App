@@ -6,6 +6,7 @@ import addFormats from "ajv-formats";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { runPackage, statesFold } from "../packages/engine/src";
+import { libraryOut } from "./library-server";
 import { listPackages, readJson, schemaDir } from "./packages";
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -40,6 +41,32 @@ for (const { id, dir, model } of listPackages()) {
   else if (readFileSync(statesPath, "utf8").trim() !== JSON.stringify(statesFold(model, run))) fail(where, "states.fold is out of date (run npm run build:states)");
   const levels = model.steps.reduce<Record<string, number>>((m, s) => ((m[s.level] = (m[s.level] ?? 0) + 1), m), {});
   console.log(`ok   ${where} (${model.steps.length} steps: ${Object.entries(levels).map(([k, v]) => `${v} ${k}`).join(", ")})`);
+}
+
+// Imported book packages (not committed): schema, step images and extras present.
+const out = libraryOut();
+if (out && existsSync(out)) {
+  for (const book of readdirSync(out)) {
+    const bdir = join(out, book);
+    if (!existsSync(join(bdir, "book.json"))) continue;
+    let n = 0;
+    let steps = 0;
+    for (const id of readdirSync(bdir)) {
+      const file = join(bdir, id, "model.json");
+      if (!existsSync(file)) continue;
+      const where = `${book}/${id}/model.json`;
+      const model = readJson(file);
+      n++;
+      steps += model.steps?.length ?? 0;
+      if (!validatePackage(model)) {
+        for (const e of validatePackage.errors!) fail(where, `${e.instancePath || "/"} ${e.message}`);
+        continue;
+      }
+      for (const f of [...model.steps.map((s: { image?: { file: string } }) => s.image?.file), ...(model.extras ?? []).map((e: { file: string }) => e.file)])
+        if (f && !existsSync(join(bdir, id, f))) fail(where, `missing ${f}`);
+    }
+    console.log(`ok   ${bdir}: ${n} imported packages, ${steps} steps`);
+  }
 }
 
 const examples = join(schemaDir, "examples");

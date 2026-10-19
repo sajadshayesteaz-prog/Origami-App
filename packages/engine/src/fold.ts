@@ -55,7 +55,7 @@ export function viewLineToModel(s: PaperState, l: Line): Line {
   return { p, d: sub(q, p) };
 }
 
-const sideArea = (poly: Vec2[], l: Line, side: 1 | -1) => {
+export const sideArea = (poly: Vec2[], l: Line, side: 1 | -1) => {
   const c = clipHalfPlane(poly, l, side);
   return c.length < 3 ? 0 : Math.abs(polygonArea(c));
 };
@@ -100,12 +100,16 @@ export function selectLayers(s: PaperState, l: Line, side: 1 | -1, sel: LayerSel
   const n = "top" in sel ? sel.top : sel.bottom;
   const ranked = "top" in sel ? viewTopFirst(s) : viewTopFirst(s).reverse();
   const clipped = new Map(candidates.map((f) => [f, clipHalfPlane(modelPolygon(s, f), l, side)]));
+  // Layer depth from the viewer's side (pieces of one layer share a depth).
   const chosen: number[] = [];
   const seen: number[] = [];
+  const depth = new Map<number, number>();
   for (const f of ranked) {
     if (!clipped.has(f)) continue;
-    const above = seen.filter((g) => convexIntersectionArea(clipped.get(f)!, clipped.get(g)!) > AREA_TOL).length;
-    if (above < n) chosen.push(f);
+    let d = 0;
+    for (const g of seen) if (convexIntersectionArea(clipped.get(f)!, clipped.get(g)!) > AREA_TOL) d = Math.max(d, depth.get(g)! + 1);
+    depth.set(f, d);
+    if (d < n) chosen.push(f);
     seen.push(f);
   }
   return chosen;
@@ -120,7 +124,7 @@ function polygonContains(poly: Vec2[], p: Vec2) {
 }
 
 /** Splits face f of state s by a model-space line; the new face inherits transform, order slot and height. */
-function splitStateFace(s: PaperState, f: number, l: Line): number | null {
+export function splitStateFace(s: PaperState, f: number, l: Line): number | null {
   const inv = invertRigid(s.faceM[f]);
   const p = applyPoint(inv, [l.p[0], l.p[1], 0]);
   const q = applyPoint(inv, [l.p[0] + l.d[0], l.p[1] + l.d[1], 0]);
@@ -135,7 +139,7 @@ function splitStateFace(s: PaperState, f: number, l: Line): number | null {
 
 const faceSide = (s: PaperState, f: number, l: Line): 1 | -1 => (signedDist(l, polygonCentroid(modelPolygon(s, f))) > 0 ? 1 : -1);
 
-function edgeOnLine(s: PaperState, e: number, f: number, l: Line) {
+export function edgeOnLine(s: PaperState, e: number, f: number, l: Line) {
   return s.cp.edges[e].v.every((v) => {
     const p = s.cp.vertices[v];
     const m = applyPoint(s.faceM[f], [p[0], p[1], 0]);
@@ -163,10 +167,27 @@ export interface FoldOptions {
 
 /** Folds selected layers along a line by 180° (core-design §6). Pure: returns new states. */
 export function foldAlong(state: PaperState, opts: FoldOptions): FoldResult {
+  if (opts.type === "auto") return unfoldAlong(state, opts, viewLineToModel(state, opts.line));
+  const p = prepareFold(state, opts);
+  return finishFold(state, p.split, p.moving, p.hinge, p.side, opts.type === "valley" ? 1 : -1, p.warnings);
+}
+
+export interface PreparedFold {
+  /** Before-state with the crossed faces split. */
+  split: PaperState;
+  /** Faces on the moving side (selected layers grown by closure). */
+  moving: Set<number>;
+  /** Line in model space. */
+  hinge: Line;
+  side: 1 | -1;
+  warnings: string[];
+}
+
+/** First half of a fold: line, moving side, layer selection, face splitting and closure. */
+export function prepareFold(state: PaperState, opts: Omit<FoldOptions, "type">): PreparedFold {
   const warnings: string[] = [];
   const l = viewLineToModel(state, opts.line);
   const sel0 = opts.layers ?? "all";
-  if (opts.type === "auto") return unfoldAlong(state, opts, l);
   let side: 1 | -1;
   if (opts.move !== undefined) {
     const p = viewToModel(state, resolvePoint(state, opts.move));
@@ -227,7 +248,7 @@ export function foldAlong(state: PaperState, opts: FoldOptions): FoldResult {
       }
     }
   }
-  return finishFold(state, s, moving, l, side, opts.type === "valley" ? 1 : -1, warnings);
+  return { split: s, moving, hinge: l, side, warnings };
 }
 
 /**

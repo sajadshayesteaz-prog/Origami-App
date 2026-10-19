@@ -1,0 +1,6 @@
+pymupdf
+opencv-python-headless
+numpy
+pyyaml
+rapidocr
+onnxruntime

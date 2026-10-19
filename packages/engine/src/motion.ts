@@ -90,7 +90,13 @@ export const COLLAPSE_SIM = { samples: 60, iterations: 40, barPasses: 4, creaseS
  * sampled once; near the end it blends into the exactly solved flat state. Vertices are shared
  * between faces, so the paper never comes apart; faces may flex slightly mid-move.
  */
-export function collapseMotion(before: PaperState, after: PaperState, root: number): Motion {
+export function collapseMotion(
+  before: PaperState,
+  after: PaperState,
+  root: number,
+  schedule: (a0: number, a1: number, t: number) => number = (a0, a1, t) => lerp(a0, a1, t),
+  kind = "collapse",
+): Motion {
   const cp = after.cp;
   const vertexPositions = (s: PaperState): Vec3[] =>
     cp.vertices.map((v, i) => {
@@ -111,13 +117,13 @@ export function collapseMotion(before: PaperState, after: PaperState, root: numb
     const o = COLLAPSE_SIM;
     for (let i = 1; i <= o.samples; i++) {
       const tt = i / o.samples;
-      relax(mesh, p, (e) => lerp(a0[e], a1[e], tt), angles, pinned, o);
+      relax(mesh, p, (e) => schedule(a0[e], a1[e], tt), angles, pinned, o);
       out.push(p.map((q) => [...q] as Vec3));
     }
     return out;
   };
   return {
-    kind: "collapse",
+    kind,
     state: after,
     frame(t, offsets = true) {
       let pos: Vec3[];
@@ -144,6 +150,20 @@ export function collapseMotion(before: PaperState, after: PaperState, root: numb
     },
   };
 }
+
+/**
+ * Two-phase schedule for compound folds: first, creases that change direction open to flat and
+ * new creases fold halfway (the layers open); then everything goes to its final angle (push and
+ * close). For a reverse fold this reads as "open the layers → push the point in → close".
+ */
+export function twoPhase(a0: number, a1: number, t: number): number {
+  const flip = a0 !== 0 && a1 !== 0 && Math.sign(a0) !== Math.sign(a1);
+  const mid = flip ? 0 : a0 === 0 ? 0.5 * a1 : a1 === 0 ? 0.5 * a0 : a0;
+  return t <= 0.5 ? lerp(a0, mid, t / 0.5) : lerp(mid, a1, (t - 0.5) / 0.5);
+}
+
+/** Motion of a compound fold: connected (bar-and-hinge) and in two phases. */
+export const phasedMotion = (before: PaperState, after: PaperState, root: number, kind: string) => collapseMotion(before, after, root, twoPhase, kind);
 
 /** Turn over / rotate: the whole model turns in view space. */
 export function viewMotion(before: PaperState, after: PaperState, axis: Vec3, angle: number, kind: string): Motion {

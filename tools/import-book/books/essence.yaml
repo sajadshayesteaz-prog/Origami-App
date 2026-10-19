@@ -1,0 +1,14 @@
+# Origami Essence (Román Díaz). No contents page; models start at title blocks ("Level n").
+slug: essence
+title: Origami Essence
+designer: Román Díaz
+pdf: "متن ها و تصاویر/Origami Essence -- Roman Diaz -- 54c66ec2a28c3ead460e9bed99afe03b -- Anna’s Archive.pdf"
+pages: [2, 139]
+zoom: 1.352            # 1700 px scans on a 1257 pt page
+marker: numbered-caption   # "12. Doblar en valle." under each drawing
+captions: spanish+english
+title_markers: ['Level\s*\d', '(Recommended|Favorite)']
+title_lines: spanish-then-english
+size_pattern: 'Recommended size:\s*([^.]+cm)'
+difficulty: { from: level, scale: book-level-4 }
+max_gap: 0.12

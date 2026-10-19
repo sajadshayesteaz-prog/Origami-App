@@ -1,0 +1,15 @@
+# Works of Hideo Komatsu (Origami House, 2013). Contents on PDF page 11; book page = PDF page - 1.
+slug: komatsu
+title: Works of Hideo Komatsu
+designer: Hideo Komatsu
+pdf: "متن ها و تصاویر/works of hideo komatsu -- hideo komatsu -- 2013 -- 9dcc060f01627818cb63c35e64a2ae66 -- Anna’s Archive.pdf"
+pages: [15, 230]       # first model (Santa Claus) .. last page of Tiger
+zoom: 1.79             # 129 dpi scans on A4: render at the scan's own resolution
+marker: number         # large bold step numbers above-left of each drawing
+number_height_ratio: 1.3
+captions: japanese+english
+title_markers: ["Difficulty", "Paper Size"]
+difficulty: { from: stars, scale: book-stars-5 }
+max_gap: 0.11
+frame_h: 0.15
+frame_v: 0.12

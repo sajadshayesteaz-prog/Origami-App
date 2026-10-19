@@ -28,6 +28,7 @@
   "include": [
     "app/src",
     "packages/engine/src",
-    "packages/engine/test"
+    "packages/engine/test",
+    "tools/library-server.ts"
   ]
 }

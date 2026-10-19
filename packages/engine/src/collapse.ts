@@ -74,10 +74,13 @@ function matchEdges(s: PaperState, spec: CreaseSpec): number[] {
   const polys = new Map(faces.map((f) => [f, modelPolygon(s, f)]));
   const seen: number[] = [];
   const chosen = new Set<number>();
+  const depth = new Map<number, number>();
   for (const f of order) {
     if (!polys.has(f)) continue;
-    const above = seen.filter((g) => convexIntersectionArea(polys.get(f)!, polys.get(g)!) > AREA_TOL).length;
-    if (above < n) chosen.add(f);
+    let d = 0;
+    for (const g of seen) if (convexIntersectionArea(polys.get(f)!, polys.get(g)!) > AREA_TOL) d = Math.max(d, depth.get(g)! + 1);
+    depth.set(f, d);
+    if (d < n) chosen.add(f);
     seen.push(f);
   }
   return hits.filter((h) => h.faces.some((f) => chosen.has(f))).map((h) => h.e);
@@ -161,7 +164,17 @@ export function collapse(state: PaperState, specs: CreaseSpec[], opts: { root?: 
   }
 
   s.faceM = transformsFromAngles(s, root, (e) => assignmentAngle(s.cp.edges[e].a));
-  // Every crease must agree from both sides and the result must be flat.
+  checkFlatConsistent(s);
+
+  const { order, solutions } = solveOrder(state, s, opts.solution ?? 0);
+  s.order = order;
+  s.heights = computeHeights(s);
+  return { after: s, root, changed: [...changed], solutions, creases };
+}
+
+/** Every crease must agree from both sides (no tearing) and the result must be flat. */
+export function checkFlatConsistent(s: PaperState) {
+  const ef = edgeFaces(s.cp);
   ef.forEach((fs, e) => {
     if (fs.length !== 2) return;
     for (const v of s.cp.edges[e].v) {
@@ -173,12 +186,7 @@ export function collapse(state: PaperState, specs: CreaseSpec[], opts: { root?: 
         );
     }
   });
-  for (const m of s.faceM) if (Math.abs(m[14]) > 1e-6 || Math.abs(Math.abs(m[10]) - 1) > 1e-6) throw new ActionError("internal: collapse result is not flat");
-
-  const { order, solutions } = solveOrder(state, s, opts.solution ?? 0);
-  s.order = order;
-  s.heights = computeHeights(s);
-  return { after: s, root, changed: [...changed], solutions, creases };
+  for (const m of s.faceM) if (Math.abs(m[14]) > 1e-6 || Math.abs(Math.abs(m[10]) - 1) > 1e-6) throw new ActionError("the result is not flat");
 }
 
 const toView = (s: PaperState, p: Vec2): Vec2 => {
@@ -245,7 +253,7 @@ function solveOrder(before: PaperState, after: PaperState, pick: number): { orde
 }
 
 /** Faces bottom → top from pairwise orders; ties keep the previous order for stability. */
-function linearize(before: PaperState, after: PaperState, faceOrders: [number, number, number][]): number[] {
+export function linearize(before: PaperState, after: PaperState, faceOrders: [number, number, number][]): number[] {
   const n = after.cp.faces.length;
   const below: Set<number>[] = Array.from({ length: n }, () => new Set());
   for (const [a, b, side] of faceOrders) {

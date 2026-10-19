@@ -12,7 +12,8 @@
     "sync:samples": "node tools/sync-samples.mjs",
     "sync:simulator": "node tools/sync-simulator.mjs",
     "test": "vitest run",
-    "build:states": "tsx tools/build-states.ts"
+    "build:states": "tsx tools/build-states.ts",
+    "import:book": "node tools/import-book/run.mjs"
   },
   "dependencies": {
     "fold": "^0.12.0",

@@ -15,6 +15,9 @@ export interface ModelPackage {
   difficulty?: { scale: string; value: number };
   paper: { shape: "square"; size?: string; colorUp?: string; colorDown?: string };
   category?: string;
+  /** Other images of the model from the book (crease pattern, photo). */
+  extras?: { kind: "cp" | "photo" | "other"; file: string; page?: number; bbox?: [number, number, number, number] }[];
+  notes?: string;
   steps: Step[];
 }
 
@@ -64,11 +67,14 @@ export function runPackage(pkg: ModelPackage): RunResult {
     else if (step.level !== "L0") {
       for (const [i, action] of (step.actions ?? []).entries()) {
         try {
-          const r = applyAction(state, action);
-          motions.push(r.motion);
-          marks.push(r.mark);
-          warnings.push(...r.warnings);
-          state = r.after;
+          for (const atom of expand(action, pkg)) {
+            const r = applyAction(state, atom.action);
+            motions.push(r.motion);
+            if (!atom.quiet) marks.push(r.mark);
+            warnings.push(...r.warnings);
+            state = r.after;
+          }
+          if (action.op === "repeat") marks.push({ kind: "repeat", label: `repeat steps ${action.steps[0].replace(/^s/, "")}–${action.steps[1].replace(/^s/, "")}${action.side === "behind" ? " behind" : ""}` });
         } catch (e) {
           const msg = e instanceof ActionError ? e.message : `internal error: ${(e as Error).message}`;
           error = `step ${step.label}, action ${i + 1} (${action.op}): ${msg}`;
@@ -81,6 +87,46 @@ export function runPackage(pkg: ModelPackage): RunResult {
     steps.push({ step, before, after: state, motions, marks, diagram: renderDiagram(before, marks, colors), warnings, error });
   }
   return { steps, final: state, finalDiagram: renderDiagram(state, [], colors) };
+}
+
+/**
+ * Macros → atomic/compound actions. `group` runs its actions in order. `repeat` re-runs the
+ * actions of a step range; with side "behind" the model is turned over first and back after.
+ * `map` renames point names in the repeated actions (e.g. {"B": "D"}); names created with `as`
+ * get a "'" suffix so they do not clash with the originals.
+ */
+function expand(action: Action, pkg: ModelPackage, depth = 0): { action: Action; quiet?: boolean }[] {
+  if (depth > 4) throw new ActionError("repeat/group nested too deeply");
+  if (action.op === "group") return action.actions.flatMap((a) => expand(a, pkg, depth + 1));
+  if (action.op !== "repeat") return [{ action }];
+  const ids = pkg.steps.map((s) => s.id);
+  const [i0, i1] = action.steps.map((id) => ids.indexOf(id));
+  if (i0 < 0 || i1 < 0 || i1 < i0) throw new ActionError(`repeat: unknown step range ${action.steps.join("–")}`);
+  const map = action.map ?? {};
+  const source = pkg.steps.slice(i0, i1 + 1).flatMap((s) => (s.actions ?? []).filter((a) => a.op !== "repeat"));
+  // Names created inside the repeated range get a "'" suffix; earlier names are kept.
+  const defined = new Set<string>();
+  const collect = (x: unknown) => {
+    if (Array.isArray(x)) x.forEach(collect);
+    else if (x && typeof x === "object") for (const [k, v] of Object.entries(x)) k === "as" ? defined.add(v as string) : collect(v);
+  };
+  collect(source);
+  const named = (v: string) => (defined.has(v) ? `${v}'` : (map[v] ?? v));
+  const rename = (x: unknown): unknown => {
+    if (typeof x === "string") return named(x);
+    if (Array.isArray(x)) return x.map(rename);
+    if (x && typeof x === "object") {
+      const o: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(x))
+        o[k] = k === "as" ? `${v}'` : k === "name" ? named(v as string) : ["op", "type", "assign", "axis", "side", "text"].includes(k) ? v : rename(v);
+      return o;
+    }
+    return x;
+  };
+  const body = source.map((a) => ({ action: rename(a) as Action }));
+  if (action.side !== "behind") return body.flatMap((b) => expand(b.action, pkg, depth + 1));
+  const turn: Action = { op: "turnOver", axis: action.axis ?? "vertical" };
+  return [{ action: turn, quiet: true }, ...body.flatMap((b) => expand(b.action, pkg, depth + 1)), { action: turn, quiet: true }];
 }
 
 /** Layer order as FOLD faceOrders: [f, g, s] = face f lies on side s of face g (along g's normal). */

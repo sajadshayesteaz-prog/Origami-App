@@ -1,4 +1,5 @@
 import { collapse, type CreaseSpec } from "./collapse";
+import { applyCompound, COMPOUND_OPS, type CompoundAction } from "./compounds";
 import { ActionError } from "./errors";
 import { foldAlong, nameLine, type FoldResult, type LayerSel } from "./fold";
 import { add, lineConvexInterval, polygonArea, polygonCentroid, reflectPoint, scale, type Line, type Vec2 } from "./geom";
@@ -15,7 +16,10 @@ export type Action =
   | { op: "collapse"; creases: CreaseSpec[]; root?: PointRef; solution?: number; text?: string }
   | { op: "turnOver"; axis?: "vertical" | "horizontal"; text?: string }
   | { op: "rotate"; degrees: number; text?: string }
-  | { op: "zoom"; region: [number, number, number, number] | null; text?: string };
+  | { op: "zoom"; region: [number, number, number, number] | null; text?: string }
+  | CompoundAction
+  | { op: "group"; actions: Action[]; text?: string }
+  | { op: "repeat"; steps: [string, string]; side?: "behind" | "same"; axis?: "vertical" | "horizontal"; map?: Record<string, string>; text?: string };
 
 /** What the 2D diagram needs to draw an action on the state before it (view coordinates). */
 export type Mark =
@@ -24,7 +28,16 @@ export type Mark =
   | { kind: "collapse"; creases: { a: Vec2; b: Vec2; type: "V" | "M" | "F" }[] }
   | { kind: "turnOver"; axis: "vertical" | "horizontal" }
   | { kind: "rotate"; degrees: number }
-  | { kind: "zoom" };
+  | { kind: "zoom" }
+  | {
+      kind: "compound";
+      label: string;
+      creases: { a: Vec2; b: Vec2; type: "V" | "M" | "F"; hidden?: boolean }[];
+      line?: { a: Vec2; b: Vec2; type: "V" | "M" };
+      arrows?: { from: Vec2; to: Vec2; style: "valley" | "mountain" | "push" }[];
+      tip?: Vec2;
+    }
+  | { kind: "repeat"; label: string };
 
 export interface ActionResult {
   after: PaperState;
@@ -122,6 +135,7 @@ export function applyAction(state: PaperState, action: Action): ActionResult {
       return { after, motion: stillMotion(after, "zoom"), mark: { kind: "zoom" }, warnings: [] };
     }
     default:
+      if (COMPOUND_OPS.has((action as { op: string }).op)) return applyCompound(state, action as CompoundAction);
       throw new ActionError(`unknown action op ${JSON.stringify((action as { op?: unknown }).op)}`);
   }
 }
